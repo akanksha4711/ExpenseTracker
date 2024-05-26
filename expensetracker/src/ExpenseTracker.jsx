@@ -1,14 +1,19 @@
-import { Grid } from "@mui/material";
+import { Grid, Stack } from "@mui/material";
 import HeroCard from "./components/HeroCard";
 import "./ExpenseTracker.css";
 import { useState, useEffect } from "react";
 import ExpenseCard from "./components/ExpenseCard";
 import Example from "./components/PieChart";
+import TopExpenses from "./components/TopExpenses";
+import { useSnackbar } from "notistack";
 
 export default function ExpenseTracker () {
     const [income, setIncome] = useState(0);
     const [expenses, setExpenses] = useState([]);
     const [data, setData] = useState([]);
+    const { enqueueSnackbar, closeSnackbar } = useSnackbar();
+    const [page, setPage] = useState(1);
+    const itemsPerPage = 3;
 
     const getTotalExpenses = (arr) => {
         return arr.reduce((sum, expense)=> sum+Number(expense.price), 0);
@@ -39,6 +44,10 @@ export default function ExpenseTracker () {
                 newIncome = income + Number(expenses[i].price) - Number(newExpense.price);
                 if(newIncome < 0) {
                     // show alert here
+                    enqueueSnackbar('You cannot add this expense as it is greater than total income',{
+                        variant: "error",
+                        autoHideDuration: 5000
+                    })
                     return;
                 }
                 newExpenseList.push(newExpense);
@@ -49,6 +58,10 @@ export default function ExpenseTracker () {
         localStorage.setItem("expenses", JSON.stringify({expenses: newExpenseList}));
         setIncome(newIncome);
         setExpenses(newExpenseList);
+        enqueueSnackbar('Successfully edited expense',{
+            variant: "success",
+            autoHideDuration: 5000
+        })
     }
 
     const deleteExpense = (id) => {
@@ -65,6 +78,10 @@ export default function ExpenseTracker () {
         localStorage.setItem("expenses", JSON.stringify({expenses: newExpenseList}));
         setIncome(newIncome);
         setExpenses(newExpenseList);
+        enqueueSnackbar('Successfully deleted expense',{
+            variant: "success",
+            autoHideDuration: 5000
+        })
     }
 
     const generateData = (expenses) => {
@@ -83,24 +100,47 @@ export default function ExpenseTracker () {
         if(otherTotal !== 0) data.push({name:"other", value: otherTotal})
         return data;
     }
-
+    const COLORS = ['purple', 'orange', 'grey', 'green', 'magenta', 'blue'];
     return (
         <div className="container">
             <h1 className="heading">Expense Tracker</h1>
             <Grid container className="hero">
                 <Grid className="hero-item" item xs={12} md={4}><HeroCard type={"balance"} income={income} setIncome={setIncome}/></Grid>
                 <Grid className="hero-item" item xs={12} md={4}><HeroCard type={"expense"} income={income} setIncome={setIncome} expenses={expenses} setExpenses={setExpenses} getTotalExpenses={getTotalExpenses}/></Grid>
-                <Grid className="hero-item" item xs={12} md={4}><Example data={data}/></Grid>
+                <Grid className="hero-item" item xs={12} md={4}>
+                    <Example data={data}/>
+                    <Stack direction={"column"}>
+                        {data.map((d, idx) => {
+                            const color = COLORS[idx];
+                            return <div style={{display:'flex', flexDirection:'row',alignItems:'center'}}>
+                                <div style={{backgroundColor:color, width:"15px", height:"5px"}}></div><span>&nbsp;{d.name}</span>
+                            </div>
+                        })}
+                    </Stack>
+                </Grid>
             </Grid>
             <Grid container spacing={2}>
                 <Grid item xs={12} md={8}>
                     <h1 className="heading"><em>Recent Transactions</em></h1>
                     <div className="expense-list">
-                        {expenses.map((expense) => <ExpenseCard expense={expense} deleteExpense={deleteExpense} editExpense={editExpense}/>)}
+                        {expenses.map((expense,idx) => {
+                            if(idx >= (page-1)*itemsPerPage && idx < page*itemsPerPage)
+                                return <ExpenseCard expense={expense} deleteExpense={deleteExpense} editExpense={editExpense}/>
+                        })}
+                    </div>
+                    <div style={{textAlign:"center"}}>
+                        <button onClick={() => {
+                            if(page > 1) setPage(page-1)
+                        }}>Previous</button>
+                        <span style={{color:'white', margin:"10px"}}>{page}</span>
+                        <button onClick={() => {
+                            if(page <= Math.floor(expenses.length/itemsPerPage)) setPage(page+1)
+                        }}>Next</button>
                     </div>
                 </Grid>
                 <Grid item xs={12} md={4}>
                     <h1 className="heading"><em>Top Expenses</em></h1>
+                    <TopExpenses data={data}/>
                 </Grid>
             </Grid>
         </div>

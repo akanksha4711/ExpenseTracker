@@ -1,11 +1,14 @@
 import ExpenseTracker from './ExpenseTracker';
+import {SnackbarProvider} from 'notistack'
 import './App.css';
 
 function App() {
   return (
-    <div className="App">
-      <ExpenseTracker/>
-    </div>
+    <SnackbarProvider>
+      <div className="App">
+        <ExpenseTracker/>
+      </div>
+    </SnackbarProvider>
   );
 }
 

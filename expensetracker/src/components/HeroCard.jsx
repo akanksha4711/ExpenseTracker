@@ -1,6 +1,7 @@
 import "./HeroCard.css"
 import Modal from 'react-modal';
 import { useState } from "react";
+import { useSnackbar } from "notistack";
 
 const customStyles = {
     content: {
@@ -18,6 +19,7 @@ const customStyles = {
 export default function HeroCard ({type, income, setIncome, expenses, setExpenses, getTotalExpenses}) {
     let subtitle;
     const [modalIsOpen, setIsOpen] = useState(false);
+    const { enqueueSnackbar, closeSnackbar } = useSnackbar()
     function openModal() {
         setIsOpen(true);
     }
@@ -34,6 +36,10 @@ export default function HeroCard ({type, income, setIncome, expenses, setExpense
         const newIncome = income + extraIncome;
         localStorage.setItem("income", newIncome);
         setIncome(newIncome);
+        enqueueSnackbar('Successfully updated wallet balance',{
+            variant: "success",
+            autoHideDuration: 5000
+        })
     }
 
     const addNewExpense = (e) => {
@@ -47,6 +53,10 @@ export default function HeroCard ({type, income, setIncome, expenses, setExpense
         const newIncome = income-newExpense.price;
         if(newIncome < 0){
             // show alert here
+            enqueueSnackbar('You cannot add this expense as it is greater than total income',{
+                variant: "error",
+                autoHideDuration: 5000
+            })
             return;
         }
         expenses.push(newExpense)
@@ -55,6 +65,10 @@ export default function HeroCard ({type, income, setIncome, expenses, setExpense
         localStorage.setItem("income", newIncome);
         setExpenses(newExpenseList);
         setIncome(newIncome);
+        enqueueSnackbar('Successfully added expense',{
+            variant: "success",
+            autoHideDuration: 5000
+        })
     }
 
     return (
